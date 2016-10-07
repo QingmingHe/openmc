@@ -6,9 +6,57 @@ import os
 import numpy as np
 from glob import glob
 import h5py
+from math import pi
+import re
 
 RESONANCE_FISSION_AUTO = 1
 RESONANCE_FISSION_USER = 2
+
+
+def _get_potentials_from_endf(endf_path, potentials_fname):
+    files = glob(os.path.join(endf_path, "*"))
+    potentials = {}
+    names = []
+    for afile in sorted(files):
+        name = _endf_fname_to_name(afile)
+        potential = _get_potential_from_endf(afile)
+        potentials[name] = potential
+        names.append(name)
+
+    with open(potentials_fname, 'w') as f:
+        for name in names:
+            f.write('\"%s\": %f,\n' % (name, potentials[name]))
+
+
+def _endf_fname_to_name(fname):
+    basename = os.path.basename(fname)
+    names = re.findall("n-\d+-([a-zA-Z]{1,2})-(\d+)([mM])?", basename)[0]
+    name = names[0] + str(int(names[1]))
+    if len(names[2]) != 0:
+        name += "_m1"
+    return name
+
+
+def _float_fortran(string):
+    x, y = re.split('[+-]', string)
+    if '-' in string:
+        return float(x) * 10 ** -float(y)
+    else:
+        return float(x) * 10 ** float(y)
+
+
+def _get_potential_from_endf(fname):
+    with open(fname) as f:
+        for aline in f:
+            if aline[71:75] == '2151':
+                f.next()
+                f.next()
+                aline = f.next()
+                if aline[12:13] == ' ':
+                    return 0.0
+                else:
+                    a = _float_fortran(aline.strip().split()[1])
+                    return 4.0 * pi * a ** 2
 
 
 def _has_resfis(A, Z):
@@ -141,7 +189,7 @@ def export_homo_problem_xml(nuclide, dilution, temperature,
     nuc = openmc.Nuclide(nuclide)
     mat = openmc.Material(material_id=1, name='mat')
     mat.set_density('atom/b-cm', 0.069335)
-    mat.add_nuclide(h1, dilution / 20.0)
+    mat.add_nuclide(h1, dilution / 20.478)
     mat.add_nuclide(nuc, 1.0)
     if fission_nuclide is not None:
         if fission_nuclide != nuclide:
@@ -778,12 +826,14 @@ class RItable(object):
         self._dilutions = dilutions
 
 if __name__ == '__main__':
-    f = FullXs()
-    f.nuclide = 'U238'
-    f.reference_dilution = 28.0
-    f.build_library()
-    f.export_to_h5(f.nuclide + '.h5')
-    r = RItable()
-    r.nuclide = "U238"
-    r.build_library()
-    r.export_to_h5(r.nuclide + '.h5')
+    # f = FullXs()
+    # f.nuclide = 'U238'
+    # f.reference_dilution = 28.0
+    # f.build_library()
+    # f.export_to_h5(f.nuclide + '.h5')
+    # r = RItable()
+    # r.nuclide = "U238"
+    # r.build_library()
+    # r.export_to_h5(r.nuclide + '.h5')
+
+    get_potentials_from_endf("/home/qingming/library/jeff-3.2/", "potentials")
