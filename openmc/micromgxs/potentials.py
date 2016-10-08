@@ -1,4 +1,6 @@
-potentials = {
+# -*- coding: utf-8 -*-
+
+_average_potentials = {
     "H1": 20.478001,
     "H2": 3.394941,
     "H3": 1.664900,
@@ -472,3 +474,7 @@ potentials = {
     "Es254": 10.589982,
     "Es255": 8.259439
 }
+
+
+def average_potentials(name):
+    return _average_potentials[name]
