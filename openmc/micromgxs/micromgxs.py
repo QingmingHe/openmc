@@ -16,6 +16,18 @@ import re
 
 RESONANCE_FISSION_AUTO = 1
 RESONANCE_FISSION_USER = 2
+DEFAULT_BATCHES = 10
+DEFAULT_INACTIVE = 5
+DEFAULT_PARTICLES = 100
+
+
+def set_default_settings(batches=None, inactive=None, particles=None):
+    if batches is not None:
+        DEFAULT_BATCHES = batches
+    if inactive is not None:
+        DEFAULT_INACTIVE = inactive
+    if particles is not None:
+        DEFAULT_PARTICLES = particles
 
 
 def _get_potentials_from_endf(endf_path, potentials_fname):
@@ -120,9 +132,9 @@ class MicroMgXsOptions(object):
         self._temperatures = [294.0, 600.0, 900.0, 1200.0, 1500.0, 1800.0]
         self._group_structure = GroupStructure('wims69e')
         self._background_nuclide = 'H1'
-        self._batches = 10
-        self._inactive = 5
-        self._particles = 100
+        self._batches = DEFAULT_BATCHES
+        self._inactive = DEFAULT_INACTIVE
+        self._particles = DEFAULT_PARTICLES
         self._resfis_method = RESONANCE_FISSION_AUTO
         self._has_res = False
         self._has_resfis = False
@@ -942,6 +954,7 @@ class RItable(object):
 if __name__ == '__main__':
     opts_list = []
     lib_fname = 'jeff-3.2-wims69e.h5'
+    set_default_settings(batches=500, inactive=100, particles=10000)
 
     # Options for generating U238
     opts_u238 = MicroMgXsOptions()
