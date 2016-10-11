@@ -89,7 +89,7 @@ def _get_A_Z_awr(cross_sections, materials):
     raise Exception('%s cannot be found in %s!' % (materials, cross_sections))
 
 
-def _condense_scatter(x):
+def _condense_scatter(x, ig):
     ng = len(x)
     for ig0, val in enumerate(x):
         if val != 0.0:
@@ -98,7 +98,10 @@ def _condense_scatter(x):
         if val != 0.0:
             break
     ig1 = ng - ig1
-    return ig0, ig1, x[ig0:ig1]
+    if ig0 > ig1:
+        return ig, ig+1, np.array([0.0])
+    else:
+        return ig0, ig1, x[ig0:ig1]
 
 
 class MicroMgXsOptions(object):
@@ -264,6 +267,10 @@ class MicroMgXsLibrary(object):
         if dset in f:
             del f[dset]
         f[dset] = self._opts_list[0].group_structure.group_boundaries
+        f[dset].attrs['first_res'] \
+            = self._opts_list[0].group_structure.first_res
+        f[dset].attrs['last_res'] \
+            = self._opts_list[0].group_structure.last_res
 
         # Export average fission spectrum
         dset = '/fission_spectrum'
@@ -308,6 +315,9 @@ class MicroMgXsNuclide(object):
         if group in f:
             del f[group]
         f.create_group(group)
+
+        # This is a nuclide
+        f[group].attrs['is_nuclide'] = 1
 
         # Export A, Z and awr
         f[group].attrs['A'] = self._A
@@ -499,6 +509,7 @@ class FullXs(object):
         settings_file.run_mode = 'fixed source'
         settings_file.batches = self._batches
         settings_file.particles = self._particles
+        settings_file.no_nu = True
         bounds = [-1, -1, -1, 1, 1, 1]
         uniform_dist = openmc.stats.Box(bounds[:3], bounds[3:],
                                         only_fissionable=False)
@@ -646,7 +657,7 @@ class FullXs(object):
         f[group + '/temperatures'] = self._temperatures
 
         for itemp in range(n_temp):
-            group = '%s/full_xs/%s' % (
+            group = '%s/full_xs/temp%s' % (
                 root_group, itemp)
 
             # Total cross sections
@@ -654,11 +665,12 @@ class FullXs(object):
 
             # Scattering matrix
             for il in range(self._legendre_order + 1):
-                for ig_out in range(ng):
+                for ig_to in range(ng):
                     ig0, ig1, scatter \
                         = _condense_scatter(
-                            self._nu_scatter[itemp, :, ig_out, il])
-                    dset = group + '/scatter/%s/%s' % (il, ig_out)
+                            self._nu_scatter[itemp, :, ig_to, il],
+                            ig_to)
+                    dset = group + '/scatter/lo%s/to%s' % (il, ig_to)
                     f[dset] = scatter
                     f[dset].attrs['ig0'] = ig0
                     f[dset].attrs['ig1'] = ig1
@@ -765,6 +777,7 @@ class RItable(object):
         settings_file.run_mode = 'fixed source'
         settings_file.batches = self._batches
         settings_file.particles = self._particles
+        settings_file.no_nu = True
         bounds = [-1, -1, -1, 1, 1, 1]
         uniform_dist = openmc.stats.Box(bounds[:3], bounds[3:],
                                         only_fissionable=False)
@@ -809,19 +822,22 @@ class RItable(object):
         tallies.export_to_xml()
 
     def build_library(self):
+        # Get cross sections
+        cross_sections = os.getenv('OPENMC_CROSS_SECTIONS')
+        if cross_sections is None:
+            raise Exception('OPENMC_CROSS_SECTIONS env var should be set!')
+
+        # Get A, Z and atomic weight ratio
+        self._A, self._Z, self._awr \
+            = _get_A_Z_awr(cross_sections, self._nuclide)
+
         # Don't build library if no resonance
         if not self._has_res:
             return
 
         # Whether has resonance fission
         if self._resfis_method == RESONANCE_FISSION_AUTO:
-            cross_sections = os.getenv('OPENMC_CROSS_SECTIONS')
-            if cross_sections is None:
-                raise Exception('OPENMC_CROSS_SECTIONS env var should be set!')
-            self._A, self._Z, self._awr \
-                = _get_A_Z_awr(cross_sections, self._nuclide)
             self._has_resfis = _has_resfis(self._A, self._Z)
-        print self._A, self._Z
 
         # Initialize multi-group cross sections (resonance xs table part)
         n_res = self._group_structure.n_res
