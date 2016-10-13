@@ -341,10 +341,13 @@ class MicroMgXsNuclide(object):
         # This is a nuclide
         f[group].attrs['is_nuclide'] = 1
 
-        # Export A, Z and awr
+        # Export header data
         f[group].attrs['A'] = self._A
         f[group].attrs['Z'] = self._Z
         f[group].attrs['awr'] = self._awr
+        f[group].attrs['ng'] = self._opts.group_structure.ng
+        f[group].attrs['first_res'] = self._opts.group_structure.first_res
+        f[group].attrs['last_res'] = self._opts.group_structure.last_res
 
         f.close()
 
