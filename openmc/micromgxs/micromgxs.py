@@ -957,26 +957,26 @@ class RItable(object):
 if __name__ == '__main__':
     opts_list = []
     lib_fname = 'jeff-3.2-wims69e.h5'
-    # set_default_settings(batches=500, inactive=100, particles=10000)
+    set_default_settings(batches=500, inactive=100, particles=10000)
 
-    # # Options for generating U238
-    # opts_u238 = MicroMgXsOptions()
-    # opts_u238.nuclide = 'U238'
-    # opts_u238.has_res = True
-    # opts_u238.reference_dilution = 28.0
-    # opts_list.append(opts_u238)
+    # Options for generating U238
+    opts_u238 = MicroMgXsOptions()
+    opts_u238.nuclide = 'U238'
+    opts_u238.has_res = True
+    opts_u238.reference_dilution = 28.0
+    opts_list.append(opts_u238)
 
-    # Options for generating U235
-    opts_u235 = MicroMgXsOptions()
-    opts_u235.nuclide = 'U235'
-    opts_u235.has_res = True
-    opts_u235.reference_dilution = 800.0
-    opts_list.append(opts_u235)
+    # # Options for generating U235
+    # opts_u235 = MicroMgXsOptions()
+    # opts_u235.nuclide = 'U235'
+    # opts_u235.has_res = True
+    # opts_u235.reference_dilution = 800.0
+    # opts_list.append(opts_u235)
 
-    # # Options for generating H1
-    # opts_h1 = MicroMgXsOptions()
-    # opts_h1.nuclide = 'H1'
-    # opts_list.append(opts_h1)
+    # Options for generating H1
+    opts_h1 = MicroMgXsOptions()
+    opts_h1.nuclide = 'H1'
+    opts_list.append(opts_h1)
 
     # # Options for generating O16
     # opts_o16 = MicroMgXsOptions()
