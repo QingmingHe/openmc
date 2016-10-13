@@ -1,80 +1,114 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import numpy as np
+import os
 import h5py
-from math import log10, ceil
+import numpy as np
+from math import log10
+import xml.etree.ElementTree as et
+import xml.dom.minidom as minidom
+from potentials import average_potentials
 
-K_BOLTZMANN = 8.6173324e-11
+
+def _copy_attrs(from_grp, to_grp):
+    for key in from_grp.attrs:
+        to_grp.attrs[key] = from_grp.attrs[key]
 
 
-class BackgroundNuclide(object):
+def build_background_library(cross_sections, bnuc_file,
+                             bnuc_cross_sections=None):
+    direct = os.path.dirname(os.path.abspath(cross_sections))
+    tree = et.parse(cross_sections)
+    root = tree.getroot()
+    if bnuc_cross_sections is None:
+        bnuc_root = root
+    else:
+        bnuc_root = et.Element('cross_sections')
 
-    def __init__(self, name, potential, A, Z, awr, n_energy_point,
-                 start_energy=1e-11, end_energy=20.0,
-                 temperatures=[293.6, 600.0, 900.0, 1200.0, 1500.0, 1800.0]):
-        self._name = name
-        self._potential = potential
-        self._start_energy = start_energy
-        self._end_energy = end_energy
-        self._n_energy_point = n_energy_point
-        self._temperatures = temperatures
-        self._A = A
-        self._Z = Z
-        self._awr = awr
+    # Process each nuclide
+    for library in root:
+        if library.attrib['type'] == 'neutron':
+            from_h5 = os.path.join(direct, library.attrib['path'])
+            from_nuc = library.attrib['materials']
+            to_nuc = from_nuc + 'b'
+            potential = average_potentials(from_nuc)
+            if potential is not None:
+                if potential > 0.0:
+                    print 'processing {0} ...'.format(to_nuc)
+                    build_background_nuclide(from_h5, bnuc_file, from_nuc,
+                                             to_nuc, potential)
+                    elem = et.SubElement(bnuc_root, 'library')
+                    elem.attrib = {'materials': to_nuc, 'path': bnuc_file,
+                                   'type': 'neutron'}
 
-        self._temp_strs = [str(int(ceil(temp))) + 'K' for temp in temperatures]
-        self._energy = {}
-        self._kTs = {}
-        self._reactions = {'reaction_002': {}}
-        reaction2 = self._reactions['reaction_002']
-        for itemp, temp_str in enumerate(self._temp_strs):
-            self._energy[temp_str] \
-                = np.logspace(log10(start_energy), log10(end_energy),
-                              n_energy_point, True)
-            self._kTs[temp_str] = K_BOLTZMANN * temperatures[itemp]
-            reaction2[temp_str] = np.zeros(n_energy_point) + potential
+    # Export cross sections for background nuclides
+    cross_sections_str = et.tostring(bnuc_root)
+    cross_sections_str = minidom.parseString(cross_sections_str)
+    cross_sections_str = cross_sections_str.toprettyxml()
+    if bnuc_cross_sections is None:
+        new_cross_sections = cross_sections
+    else:
+        new_cross_sections = bnuc_cross_sections
+    with open(new_cross_sections, 'w') as f:
+        f.write(cross_sections_str)
 
-    def export_to_h5(self, fname=None, fh=None):
-        if fh is not None:
-            f = fh
-        elif fname is not None:
-            f = h5py.File(fname)
 
-        nuc_grp = '/' + self._name
-        if nuc_grp in f:
-            del f[nuc_grp]
-        f.create_group(nuc_grp)
-        f[nuc_grp].attrs['A'] = self._A
-        f[nuc_grp].attrs['Z'] = self._Z
-        f[nuc_grp].attrs['atomic_weight_ratio'] = self._awr
-        f[nuc_grp].attrs['metastable'] = 0
-        erg_grp = nuc_grp + '/energy'
-        f.create_group(erg_grp)
-        for temp_str in self._temp_strs:
-            f[erg_grp][temp_str] = self._energy[temp_str]
-        kTs_grp = nuc_grp + '/kTs'
-        f.create_group(kTs_grp)
-        for temp_str in self._kTs:
-            f[kTs_grp][temp_str] = self._kTs[temp_str]
-        reactions_grp = nuc_grp + '/reactions'
-        f.create_group(reactions_grp)
-        for reaction in self._reactions:
-            reaction_grp = reactions_grp + '/' + reaction
-            f.create_group(reaction_grp)
-            f[reaction_grp].attrs['Q_value'] = 0.0
-            f[reaction_grp].attrs['center_of_mass'] = 1
-            f[reaction_grp].attrs['label'] = np.string_('(n,elastic)')
-            f[reaction_grp].attrs['mt'] = 2
-            for temp_str in self._temp_strs:
-                rea_temp_grp = reaction_grp + '/' + temp_str
-                f.create_group(rea_temp_grp)
-                f[rea_temp_grp]['xs'] \
-                    = self._reactions[reaction][temp_str]
-                f[rea_temp_grp]['xs'].attrs['threshold_idx'] = 1
+def build_background_nuclide(from_h5, to_h5, from_nuc, to_nuc, potential,
+                             n_erg=100, erg_stt=1e-11, erg_end=20.0):
+    to_f = h5py.File(to_h5)
+    from_f = h5py.File(from_h5)
 
-        if fname is not None:
-            f.close()
+    # Create nuclide group
+    if to_nuc in to_f:
+        del to_f[to_nuc]
+    to_f.create_group(to_nuc)
 
-if __name__ == '__main__':
-    nuc = BackgroundNuclide('H1b', 20.0, 1, 1, 0.999167, 100)
-    nuc.export_to_h5('background.h5')
+    # Copy nuclide attributes
+    _copy_attrs(from_f[from_nuc], to_f[to_nuc])
+
+    # New energy with original attributes
+    energy = np.logspace(log10(erg_stt), log10(erg_end), n_erg, True)
+    to_f[to_nuc].create_group('energy')
+    for temp in from_f[from_nuc]['energy']:
+        to_f[to_nuc]['energy'][temp] = energy
+    _copy_attrs(from_f[from_nuc]['energy'], to_f[to_nuc]['energy'])
+
+    # copy kTs
+    from_f[from_nuc].copy('kTs', to_f[to_nuc])
+
+    # Copy reactions attributes
+    to_f[to_nuc].create_group('reactions')
+    _copy_attrs(from_f[from_nuc]['reactions'], to_f[to_nuc]['reactions'])
+
+    # Copy attributes of reaction_002
+    to_f[to_nuc]['reactions'].create_group('reaction_002')
+    _copy_attrs(from_f[from_nuc]['reactions']['reaction_002'],
+                to_f[to_nuc]['reactions']['reaction_002'])
+
+    for grp in from_f[from_nuc]['reactions']['reaction_002']:
+        if grp.endswith('K'):
+            to_f[to_nuc]['reactions']['reaction_002'].create_group(grp)
+            # Copy grp attributes
+            _copy_attrs(
+                from_f[from_nuc]['reactions']['reaction_002'][grp],
+                to_f[to_nuc]['reactions']['reaction_002'][grp])
+            # Change xs of elastic reaction to potential
+            to_f[to_nuc]['reactions']['reaction_002'][grp]['xs'] \
+                = np.zeros(n_erg) + potential
+            # Copy attributes of xs
+            _copy_attrs(
+                from_f[from_nuc]['reactions']['reaction_002'][grp]['xs'],
+                to_f[to_nuc]['reactions']['reaction_002'][grp]['xs'])
+        else:
+            # Copy other groups
+            from_f[from_nuc]['reactions']['reaction_002'].copy(
+                grp, to_f[to_nuc]['reactions']['reaction_002'])
+
+    from_f.close()
+    to_f.close()
+
+# build_background_nuclide('/home/qingming/library/jeff-3.2-hdf5/H1.h5',
+#                          'background.h5', 'H1', 'H1b', 20.0)
+# build_background_nuclide('/home/qmhe/library/jeff-3.2-hdf5/U238.h5',
+#                          'background.h5', 'U238', 'U238b', 12.0)
+build_background_library('/home/qmhe/library/jeff-3.2-hdf5/cross_sections.xml',
+                         'background.h5', 'background.xml')

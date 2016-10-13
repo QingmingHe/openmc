@@ -705,7 +705,7 @@ class FullXs(object):
 
         # Get flux
         self._flux_fix[itemp, :] \
-            = sp.get_tally(scores=['flux']) .sum[:, 0, 0][::-1] \
+            = sp.get_tally(scores=['flux']).sum[:, 0, 0][::-1] \
             * self._nuclide_density
 
         # Get total xs

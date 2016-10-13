@@ -477,4 +477,7 @@ _average_potentials = {
 
 
 def average_potentials(name):
-    return _average_potentials[name]
+    if name in _average_potentials:
+        return _average_potentials[name]
+    else:
+        return None
