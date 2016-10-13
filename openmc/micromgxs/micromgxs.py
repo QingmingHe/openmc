@@ -22,6 +22,7 @@ DEFAULT_PARTICLES = 100
 
 
 def set_default_settings(batches=None, inactive=None, particles=None):
+    global DEFAULT_BATCHES, DEFAULT_INACTIVE, DEFAULT_PARTICLES
     if batches is not None:
         DEFAULT_BATCHES = batches
     if inactive is not None:
@@ -131,7 +132,7 @@ class MicroMgXsOptions(object):
                            6e2, 1e3, 1.2e3, 1e4, 1e10]
         self._temperatures = [294.0, 600.0, 900.0, 1200.0, 1500.0, 1800.0]
         self._group_structure = GroupStructure('wims69e')
-        self._background_nuclide = 'H1'
+        self._background_nuclide = 'H1b'
         self._batches = DEFAULT_BATCHES
         self._inactive = DEFAULT_INACTIVE
         self._particles = DEFAULT_PARTICLES
@@ -444,14 +445,11 @@ class GroupStructure(object):
 def export_homo_problem_xml(nuclide, dilution, temperature,
                             background_nuclide, fission_nuclide=None,
                             fisnuc_refdil=None):
-    # Material is composed of H-1 and the object nuclide
+    # Material is composed of background H-1 and the object nuclide
     mat = openmc.Material(material_id=1, name='mat')
     mat.set_density('atom/b-cm', 0.069335)
     h1 = openmc.Nuclide(background_nuclide)
-    mat.add_nuclide(h1, dilution / 20.478)
-    if nuclide != background_nuclide:
-        nuc = openmc.Nuclide(nuclide)
-        mat.add_nuclide(nuc, 1.0)
+    mat.add_nuclide(h1, dilution / 20.478001)
     if fission_nuclide is not None:
         if fission_nuclide != nuclide:
             if fisnuc_refdil is None:
@@ -529,6 +527,10 @@ class FullXs(object):
         settings_file.source = openmc.source.Source(space=uniform_dist,
                                                     energy=watt_dist)
         settings_file.temperature = {'default': temperature}
+        # TODO
+        # settings_file.create_fission_neutrons = False
+        # settings_file.cutoff \
+        #     = {'energy': self._group_structure.res_group_bnds[-1] * 1e-6}
         settings_file.export_to_xml()
 
         # Create tallies
@@ -789,7 +791,10 @@ class RItable(object):
         settings_file.run_mode = 'fixed source'
         settings_file.batches = self._batches
         settings_file.particles = self._particles
-        settings_file.no_nu = True
+        # TODO
+        # settings_file.create_fission_neutrons = False
+        # settings_file.cutoff \
+        #     = {'energy': self._group_structure.res_group_bnds[-1] * 1e-6}
         bounds = [-1, -1, -1, 1, 1, 1]
         uniform_dist = openmc.stats.Box(bounds[:3], bounds[3:],
                                         only_fissionable=False)
@@ -963,22 +968,22 @@ if __name__ == '__main__':
     opts_u238.reference_dilution = 28.0
     opts_list.append(opts_u238)
 
-    # Options for generating U235
-    opts_u235 = MicroMgXsOptions()
-    opts_u235.nuclide = 'U235'
-    opts_u235.has_res = True
-    opts_u235.reference_dilution = 800.0
-    opts_list.append(opts_u235)
+    # # Options for generating U235
+    # opts_u235 = MicroMgXsOptions()
+    # opts_u235.nuclide = 'U235'
+    # opts_u235.has_res = True
+    # opts_u235.reference_dilution = 800.0
+    # opts_list.append(opts_u235)
 
-    # Options for generating H1
-    opts_h1 = MicroMgXsOptions()
-    opts_h1.nuclide = 'H1'
-    opts_list.append(opts_h1)
+    # # Options for generating H1
+    # opts_h1 = MicroMgXsOptions()
+    # opts_h1.nuclide = 'H1'
+    # opts_list.append(opts_h1)
 
-    # Options for generating O16
-    opts_o16 = MicroMgXsOptions()
-    opts_o16.nuclide = 'O16'
-    opts_list.append(opts_o16)
+    # # Options for generating O16
+    # opts_o16 = MicroMgXsOptions()
+    # opts_o16.nuclide = 'O16'
+    # opts_list.append(opts_o16)
 
     lib = MicroMgXsLibrary(opts_list, lib_fname)
     lib.build_library_h5()
