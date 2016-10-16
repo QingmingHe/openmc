@@ -13,6 +13,8 @@ from glob import glob
 import h5py
 from math import pi
 import re
+import subprocess
+from time import sleep
 
 RESONANCE_FISSION_AUTO = 1
 RESONANCE_FISSION_USER = 2
@@ -21,8 +23,30 @@ DEFAULT_INACTIVE = 5
 DEFAULT_PARTICLES = 100
 
 
+def _execute_command(command):
+    p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    return p.communicate()[0]
+
+
+def _wait_finished(jobid):
+    while True:
+        sleep(5)
+        out = _execute_command('squeue')
+        jobids = []
+        for aline in out.split(b'\n')[1:]:
+            if len(aline) > 0:
+                jobids.append(aline.strip().split()[0])
+        if jobid not in jobids:
+            break
+
+
 def _run_openmc_kilkenney():
-    os.system('run_openmc')
+    out = _execute_command('run_openmc')
+    jobid = out.strip().split()[-1]
+    print('running job %s ...' % (jobid))
+    _wait_finished(jobid)
+    #os.system('openmc')
 
 
 def set_default_settings(batches=None, inactive=None, particles=None):
