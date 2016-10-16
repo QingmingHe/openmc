@@ -21,6 +21,10 @@ DEFAULT_INACTIVE = 5
 DEFAULT_PARTICLES = 100
 
 
+def _run_openmc_kilkenney():
+    os.system('run_openmc')
+
+
 def set_default_settings(batches=None, inactive=None, particles=None):
     global DEFAULT_BATCHES, DEFAULT_INACTIVE, DEFAULT_PARTICLES
     if batches is not None:
@@ -636,7 +640,8 @@ class FullXs(object):
             self._export_fs_xml(temperature)
 
             # Run OpenMC
-            openmc.run()
+            # openmc.run()
+            _run_openmc_kilkenney()
 
             # Load the tally data from statepoint
             statepoint = glob(os.path.join(
@@ -649,7 +654,8 @@ class FullXs(object):
             self._export_eig_xml()
 
             # Run OpenMC
-            openmc.run()
+            # openmc.run()
+            _run_openmc_kilkenney()
 
             # Load the tally data from statepoint
             statepoint = glob(os.path.join(
@@ -875,7 +881,8 @@ class RItable(object):
                 self._export_xml(temperature, dilution)
 
                 # Run OpenMC
-                openmc.run()
+                # openmc.run()
+                _run_openmc_kilkenney()
 
                 # Load the tally data from statepoint
                 statepoint = glob(os.path.join(
@@ -960,7 +967,7 @@ class RItable(object):
 if __name__ == '__main__':
     opts_list = []
     lib_fname = 'jeff-3.2-wims69e.h5'
-    set_default_settings(batches=500, inactive=100, particles=10000)
+    set_default_settings(batches=500, inactive=100, particles=50000)
 
     # Options for generating U238
     opts_u238 = MicroMgXsOptions()
