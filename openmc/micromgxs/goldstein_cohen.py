@@ -161,4 +161,4 @@ def average_lambda(A):
     return _lambdas[i]
 
 if __name__ == "__main__":
-    print average_lambda(238)
+    pass
