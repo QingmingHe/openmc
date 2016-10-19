@@ -21,6 +21,7 @@ RESONANCE_FISSION_USER = 2
 DEFAULT_BATCHES = 10
 DEFAULT_INACTIVE = 5
 DEFAULT_PARTICLES = 100
+_hostname = None
 
 
 def _execute_command(command):
@@ -41,12 +42,17 @@ def _wait_finished(jobid):
             break
 
 
-def _run_openmc_kilkenney():
-    out = _execute_command('run_openmc')
-    jobid = out.strip().split()[-1]
-    print('running job %s ...' % (jobid))
-    _wait_finished(jobid)
-    #os.system('openmc')
+def _run_openmc():
+    global _hostname
+    if _hostname is None:
+        _hostname = _execute_command('hostname').strip()
+    if _hostname == 'kilkenny':
+        out = _execute_command('run_openmc')
+        jobid = out.strip().split()[-1]
+        print('running job %s ...' % (jobid))
+        _wait_finished(jobid)
+    else:
+        openmc.run()
 
 
 def set_default_settings(batches=None, inactive=None, particles=None):
@@ -567,7 +573,6 @@ class FullXs(object):
         settings_file.source = openmc.source.Source(space=uniform_dist,
                                                     energy=watt_dist)
         settings_file.temperature = {'default': temperature}
-        # TODO
         settings_file.create_fission_neutrons = False
         settings_file.export_to_xml()
 
@@ -580,7 +585,7 @@ class FullXs(object):
         energy_out_filter = openmc.EnergyoutFilter(grp_bnds)
         cell_filter = openmc.CellFilter((1, ))
 
-        for score in ['total', 'fission', 'nu-fission']:
+        for score in ['total', 'fission', 'nu-fission', 'absorption']:
             energy_tally = openmc.Tally()
             energy_tally.estimator = 'tracklength'
             energy_tally.filters = [energy_filter, cell_filter]
@@ -664,8 +669,7 @@ class FullXs(object):
             self._export_fs_xml(temperature)
 
             # Run OpenMC
-            # openmc.run()
-            _run_openmc_kilkenney()
+            _run_openmc()
 
             # Load the tally data from statepoint
             statepoint = glob(os.path.join(
@@ -678,8 +682,7 @@ class FullXs(object):
             self._export_eig_xml()
 
             # Run OpenMC
-            # openmc.run()
-            _run_openmc_kilkenney()
+            _run_openmc()
 
             # Load the tally data from statepoint
             statepoint = glob(os.path.join(
@@ -744,6 +747,7 @@ class FullXs(object):
     def _load_fix_statepoint(self, statepoint, itemp):
         sp = openmc.StatePoint(statepoint)
         ng = self._group_structure.ng
+        first_res = self._group_structure.first_res
 
         # Get flux
         self._flux_fix[itemp, :] \
@@ -768,7 +772,12 @@ class FullXs(object):
                 .sum[:, 0, 0][::-1]
         self._nu_fission[itemp, :] /= self._flux_fix[itemp, :]
 
-        # Get scattering matrix
+        # Get absorption xs
+        absorb = sp.get_tally(scores=['absorption'], nuclides=[self._nuclide])\
+                   .sum[:, 0, 0][::-1]
+        absorb[:] /= self._flux_fix[itemp, :]
+
+        # Get scattering matrix (analog)
         for i in range(self._legendre_order + 1):
             self._nu_scatter[itemp, :, :, i] \
                 = sp.get_tally(scores=['nu-scatter-%s' % i],
@@ -776,6 +785,15 @@ class FullXs(object):
                     .sum[:, 0, 0][::-1].reshape(ng, ng)
             for ig in range(ng):
                 self._nu_scatter[itemp, ig, :, i] /= self._flux_fix[itemp, ig]
+
+        # Compute nu scatter from total and absorption in the resonance and
+        # thermal energy ranges. As (n,xn) reactions are threshold reactions,
+        # nu_scatter is scatter in the resonance and thermal energy ranges.
+        nu_scatter_tl = self._total[itemp, :] - absorb[:]
+        nu_scatter_al = np.sum(self._nu_scatter[itemp, :, :, 0], 1)
+        for ig in range(first_res, ng):
+            self._nu_scatter[itemp, ig, :, 0] \
+                *= nu_scatter_tl[ig] / nu_scatter_al[ig]
 
         # Determine whether is fissionable nuclide
         if sum(self._fission[itemp, :]) != 0.0:
@@ -831,7 +849,6 @@ class RItable(object):
         settings_file.run_mode = 'fixed source'
         settings_file.batches = self._batches
         settings_file.particles = self._particles
-        # TODO
         settings_file.create_fission_neutrons = False
         settings_file.cutoff \
             = {'energy': self._group_structure.res_group_bnds[-1] * 1e-6}
@@ -905,8 +922,7 @@ class RItable(object):
                 self._export_xml(temperature, dilution)
 
                 # Run OpenMC
-                # openmc.run()
-                _run_openmc_kilkenney()
+                _run_openmc()
 
                 # Load the tally data from statepoint
                 statepoint = glob(os.path.join(
@@ -991,7 +1007,7 @@ class RItable(object):
 if __name__ == '__main__':
     opts_list = []
     lib_fname = 'jeff-3.2-wims69e.h5'
-    set_default_settings(batches=500, inactive=100, particles=50000)
+    set_default_settings(batches=1000, inactive=100, particles=200000)
 
     # Options for generating U238
     opts_u238 = MicroMgXsOptions()
