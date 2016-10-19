@@ -46,7 +46,7 @@ def _run_openmc():
     global _hostname
     if _hostname is None:
         _hostname = _execute_command('hostname').strip()
-    if _hostname == 'kilkenny':
+    if _hostname == b'kilkenny':
         out = _execute_command('run_openmc')
         jobid = out.strip().split()[-1]
         print('running job %s ...' % (jobid))
@@ -100,11 +100,11 @@ def _float_fortran(string):
 def _get_potential_from_endf(fname):
     with open(fname) as f:
         for aline in f:
-            if aline[71:75] == '2151':
+            if aline[71:75] == b'2151':
                 f.next()
                 f.next()
                 aline = f.next()
-                if aline[12:13] == ' ':
+                if aline[12:13] == b' ':
                     return 0.0
                 else:
                     a = _float_fortran(aline.strip().split()[1])
