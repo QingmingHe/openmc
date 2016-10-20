@@ -21,7 +21,12 @@ RESONANCE_FISSION_USER = 2
 DEFAULT_BATCHES = 10
 DEFAULT_INACTIVE = 5
 DEFAULT_PARTICLES = 100
-_hostname = None
+p = subprocess.Popen('hostname', shell=True, stdout=subprocess.PIPE,
+                     stderr=subprocess.PIPE)
+_hostname = p.communicate()[0].strip()
+_cross_sections = os.getenv('OPENMC_CROSS_SECTIONS')
+if _cross_sections is None:
+    raise Exception('OPENMC_CROSS_SECTIONS env var should be set!')
 
 
 def _execute_command(command):
@@ -44,8 +49,6 @@ def _wait_finished(jobid):
 
 def _run_openmc():
     global _hostname
-    if _hostname is None:
-        _hostname = _execute_command('hostname').strip()
     if _hostname == b'kilkenny':
         out = _execute_command('run_openmc')
         jobid = out.strip().split()[-1]
@@ -349,6 +352,9 @@ class MicroMgXsNuclide(object):
         self._opts = opts
 
     def build_library(self):
+        global _cross_sections
+
+        print('processing %s ...' % (self._opts.nuclide))
         # Build full xs part
         self._full_xs = FullXs(self._opts)
         self._full_xs.build_library()
@@ -358,9 +364,8 @@ class MicroMgXsNuclide(object):
         self._ri_table.build_library()
 
         # Obain A, Z and awr
-        cross_sections = os.getenv('OPENMC_CROSS_SECTIONS')
         self._A, self._Z, self._awr \
-            = _get_A_Z_awr(cross_sections, self._opts._nuclide)
+            = _get_A_Z_awr(_cross_sections, self._opts._nuclide)
 
     def export_to_h5(self, fname):
         f = h5py.File(fname)
@@ -649,6 +654,8 @@ class FullXs(object):
         tallies.export_to_xml()
 
     def build_library(self):
+        print('processing %s/full_xs ...' % (self._nuclide))
+
         # Initialize multi-group cross sections (full xs part)
         ng = self._group_structure.ng
         ng_in = ng
@@ -665,6 +672,9 @@ class FullXs(object):
         self._chi = np.zeros(ng)
 
         for itemp, temperature in enumerate(self._temperatures):
+            print('processing %s/full_xs/temp%i ...' %
+                  (self._nuclide, itemp))
+
             # Export fixed source input files
             self._export_fs_xml(temperature)
 
@@ -677,6 +687,7 @@ class FullXs(object):
             self._load_fix_statepoint(statepoint, itemp)
 
         if self._fissionable:
+            print('processing %s/full_xs/chi ...' % (self._nuclide))
             # Process chi for fissionable nuclide
             # Export eigenvalue input files
             self._export_eig_xml()
@@ -889,14 +900,13 @@ class RItable(object):
         tallies.export_to_xml()
 
     def build_library(self):
-        # Get cross sections
-        cross_sections = os.getenv('OPENMC_CROSS_SECTIONS')
-        if cross_sections is None:
-            raise Exception('OPENMC_CROSS_SECTIONS env var should be set!')
+        global _cross_sections
+
+        print('processing %s/resonance ...' % self._nuclide)
 
         # Get A, Z and atomic weight ratio
         self._A, self._Z, self._awr \
-            = _get_A_Z_awr(cross_sections, self._nuclide)
+            = _get_A_Z_awr(_cross_sections, self._nuclide)
 
         # Don't build library if no resonance
         if not self._has_res:
@@ -917,7 +927,11 @@ class RItable(object):
             self._nu_fission = np.zeros((n_temp, n_res, n_dilution))
 
         for itemp, temperature, in enumerate(self._temperatures):
+            print('processing %s/resonance/temp%i ...' %
+                  (self._nuclide, itemp))
             for idil, dilution in enumerate(self._dilutions):
+                print('processing %s/resonance/temp%i/dil%i ...' %
+                      (self._nuclide, itemp, idil))
                 # Export input files
                 self._export_xml(temperature, dilution)
 
