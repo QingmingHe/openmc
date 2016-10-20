@@ -997,23 +997,23 @@ class RItable(object):
                 f['{0}/temp{1}/absorption'.format(group, itemp)]\
                     = self._absorption[itemp, ...]
                 f['{0}/temp{1}/scatter'.format(group, itemp)]\
-                    = self._absorption[itemp, ...]
+                    = self._nu_scatter[itemp, ...]
                 if self._has_resfis:
                     f['{0}/temp{1}/nu_fission'.format(group, itemp)]\
-                        = self._absorption[itemp, ...]
+                        = self._nu_fission[itemp, ...]
 
         f.close()
 
 if __name__ == '__main__':
     opts_list = []
     lib_fname = 'jeff-3.2-wims69e.h5'
-    set_default_settings(batches=1000, inactive=100, particles=200000)
+    set_default_settings(batches=1000, inactive=100, particles=100000)
 
     # Options for generating U238
     opts_u238 = MicroMgXsOptions()
     opts_u238.nuclide = 'U238'
     opts_u238.has_res = True
-    opts_u238.reference_dilution = 28.0
+    opts_u238.reference_dilution = 45.0
     opts_list.append(opts_u238)
 
     # # Options for generating U235
