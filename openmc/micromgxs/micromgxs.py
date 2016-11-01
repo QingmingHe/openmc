@@ -945,11 +945,11 @@ class RItable(object):
 
     def _load_statepoint(self, statepoint, itemp, idil):
         sp = openmc.StatePoint(statepoint)
-        dens1 = self._nuclide_density
 
         # Get flux
         self._flux[itemp, :, idil] \
-            = sp.get_tally(scores=['flux']).sum[:, 0, 0][::-1] * dens1
+            = sp.get_tally(scores=['flux']).sum[:, 0, 0][::-1] * \
+            self._nuclide_density
 
         # Get absorption xs
         self._absorption[itemp, :, idil] \
@@ -1020,14 +1020,16 @@ class RItable(object):
 
 if __name__ == '__main__':
     opts_list = []
-    lib_fname = 'jeff-3.2-wims69e.h5'
-    set_default_settings(batches=1000, inactive=100, particles=100000)
+    lib_fname = 'jeff-3.2-wims69e-1m.h5'
+    set_default_settings(batches=100, inactive=10, particles=10000)
 
     # Options for generating U238
     opts_u238 = MicroMgXsOptions()
     opts_u238.nuclide = 'U238'
     opts_u238.has_res = True
     opts_u238.reference_dilution = 45.0
+    opts_u238.temperatures = [293.6]
+    opts_u238.dilutions = [28.0]
     opts_list.append(opts_u238)
 
     # # Options for generating U235
@@ -1038,9 +1040,9 @@ if __name__ == '__main__':
     # opts_list.append(opts_u235)
 
     # Options for generating H1
-    opts_h1 = MicroMgXsOptions()
-    opts_h1.nuclide = 'H1'
-    opts_list.append(opts_h1)
+    # opts_h1 = MicroMgXsOptions()
+    # opts_h1.nuclide = 'H1'
+    # opts_list.append(opts_h1)
 
     # # Options for generating O16
     # opts_o16 = MicroMgXsOptions()

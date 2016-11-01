@@ -98,6 +98,9 @@ def build_background_nuclide(from_h5, to_h5, from_nuc, to_nuc, potential,
             _copy_attrs(
                 from_f[from_nuc]['reactions']['reaction_002'][grp]['xs'],
                 to_f[to_nuc]['reactions']['reaction_002'][grp]['xs'])
+            # Change threshold index to one
+            to_f[to_nuc]['reactions']['reaction_002'][grp]['xs'].\
+                attrs['threshold_idx'] = 1
         else:
             # Copy other groups
             from_f[from_nuc]['reactions']['reaction_002'].copy(
@@ -106,9 +109,6 @@ def build_background_nuclide(from_h5, to_h5, from_nuc, to_nuc, potential,
     from_f.close()
     to_f.close()
 
-# build_background_nuclide('/home/qingming/library/jeff-3.2-hdf5/H1.h5',
-#                          'background.h5', 'H1', 'H1b', 20.0)
-# build_background_nuclide('/home/qmhe/library/jeff-3.2-hdf5/U238.h5',
-#                          'background.h5', 'U238', 'U238b', 12.0)
-build_background_library('/home/qmhe/library/jeff-3.2-hdf5/cross_sections.xml',
-                         'background.h5', 'background.xml')
+if __name__ == '__main__':
+    cross_sections = os.getenv('OPENMC_CROSS_SECTIONS')
+    build_background_library(cross_sections, 'background.h5', 'background.xml')
