@@ -16,7 +16,7 @@ module tracking
   use string,             only: to_str
   use tally,              only: score_analog_tally, score_tracklength_tally, &
                                 score_collision_tally, score_surface_current, &
-                                score_track_derivative, &
+                                score_track_derivative, score_surface_flux, &
                                 score_collision_derivative, zero_flux_derivs
   use track_output,       only: initialize_particle_track, write_particle_track, &
                                 add_particle_track, finalize_particle_track

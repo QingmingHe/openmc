@@ -18,6 +18,7 @@ module tally
   use output,           only: header
   use particle_header,  only: LocalCoord, Particle
   use string,           only: to_str
+  use surface_header,   only: Surface
   use tally_filter
 
   implicit none
@@ -3213,6 +3214,94 @@ contains
 !===============================================================================
 ! APPLY_DERIVATIVE_TO_SCORE multiply the given score by its relative derivative
 !===============================================================================
+  subroutine score_surface_flux(p)
+    type(Particle), intent(in) :: p
+
+    integer :: i
+    integer :: j
+    integer :: i_tally
+    integer :: i_surface
+    integer :: filter_index
+    integer :: i_filter_surf   ! index of surface filter in filters
+    integer :: i_filter_energy ! index of energy filter in filters
+    integer :: i_filter_polar  ! index of energy filter in filters
+    real(8) :: filt_score      ! score applied by filters
+    real(8) :: mu              ! cosine of particle and surface normal
+    real(8) :: score           ! score of the tally
+    real(8) :: norm(3)         ! normal of surface
+    type(TallyObject), pointer :: t
+    class(Surface), pointer :: surf
+
+    ! Get the pointer to surface
+    i_surface = abs(p % surface)
+    surf => surfaces(i_surface)%obj
+
+    TALLY_LOOP: do i = 1, active_surf_flux_tallies % size()
+      ! Get pointer to tally
+      i_tally = active_surf_flux_tallies % get_item(i)
+      t => tallies(i_tally)
+
+      if (t % type /= TALLY_SURFACE_FLUX) cycle
+
+      ! Get index for surface and energy filters
+      i_filter_surf = t % find_filter(FILTER_SURFACE)
+      if (i_filter_surf <= 0) cycle
+      i_filter_energy = t % find_filter(FILTER_ENERGYIN)
+      if (i_filter_energy <= 0) cycle
+      i_filter_polar = t % find_filter(FILTER_POLAR)
+      if (i_filter_polar <= 0) cycle
+
+      ! Determine incoming energy bin
+      call t % filters(i_filter_energy) % obj % get_next_bin(p, &
+        ESTIMATOR_TRACKLENGTH, NO_BIN_FOUND, &
+        matching_bins(i_filter_energy), filt_score)
+      if (matching_bins(i_filter_energy) == NO_BIN_FOUND) cycle
+
+      ! Determine surface bin
+      call t % filters(i_filter_surf) % obj % get_next_bin(p, &
+        ESTIMATOR_TRACKLENGTH, NO_BIN_FOUND, &
+        matching_bins(i_filter_surf), filt_score)
+      if (matching_bins(i_filter_surf) == NO_BIN_FOUND) cycle
+
+      ! Determine polar bin
+      call t % filters(i_filter_polar) % obj % get_next_bin(p, &
+        ESTIMATOR_TRACKLENGTH, NO_BIN_FOUND, &
+        matching_bins(i_filter_polar), filt_score)
+      if (matching_bins(i_filter_polar) == NO_BIN_FOUND) cycle
+
+      ! Determine scoring index for this filter combination
+      filter_index = sum((matching_bins(1:size(t % filters)) - 1) &
+        * t % stride) + 1
+
+      ! Calculate cosine
+      norm = surf % normal(p % coord(1) % xyz)
+      norm = norm / sqrt(dot_product(norm, norm))
+      mu = dot_product(p % coord(1) % uvw, norm)
+      ! write(*, *) acos(mu) / 3.14159 * 180.0
+
+      ! Calculate score
+      if (abs(mu) < 0.1) then
+        score = p % wgt / 0.05
+      else
+        score = p % wgt / abs(mu)
+      end if
+
+      SCORE_LOOP: do j = 1, t % n_user_score_bins
+        if ((t % score_bins(j) == SCORE_FLUX_IN .and. mu < 0.0) &
+          .or. (t % score_bins(j) == SCORE_FLUX_OUT .and. mu > 0.0)) then
+!$omp atomic
+          t % results(RESULT_VALUE, j, filter_index) = &
+            t % results(RESULT_VALUE, j, filter_index) + score
+        end if
+      end do SCORE_LOOP
+
+    end do TALLY_LOOP
+
+  end subroutine score_surface_flux
+
+!===============================================================================
+! APPLY_DERIVATIVE_TO_SCORE multiply the given score by its relative derivative
+!===============================================================================
 
   subroutine apply_derivative_to_score(p, t, i_nuclide, atom_density, &
                                        score_bin, score)
@@ -4213,6 +4302,8 @@ contains
         end if
       elseif (user_tallies(i) % type == TALLY_SURFACE_CURRENT) then
         call active_current_tallies % add(i_user_tallies + i)
+      elseif (user_tallies(i) % type == TALLY_SURFACE_FLUX) then
+        call active_surf_flux_tallies % add(i_user_tallies + i)
       end if
     end do
 
@@ -4238,6 +4329,9 @@ contains
     else if (active_current_tallies % size() > 0) then
       call fatal_error("Active current tallies should not exist before CMFD &
            &tallies!")
+    else if (active_surf_flux_tallies % size() > 0) then
+      call fatal_error("Active current tallies should not exist before CMFD &
+        &tallies!")
     end if
 
     do i = 1, n_cmfd_tallies

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<materials>
+
+  <material id="1" temperature="293.6">
+    <density units="atom/b-cm" value="0.068636932" />
+    <nuclide name="U238"  ao="2.21546e-2" />
+    <nuclide name="U235"  ao="7.18132e-4" />
+    <nuclide name="O16"   ao="4.57642e-2" />
+  </material>
+
+  <material id="2" temperature="293.6">
+    <density units="atom/b-cm" value="2.68714e-05" />
+    <nuclide name="He4"   ao="2.68714e-05" />
+  </material>
+
+  <material id="3" temperature="293.6">
+    <density units="atom/b-cm" value="0.04253938" />
+    <nuclide name="Zr90"   ao="2.18865E-2" />
+    <nuclide name="Zr91"   ao="4.77292E-3" />
+    <nuclide name="Zr92"   ao="7.29551E-3" />
+    <nuclide name="Zr94"   ao="7.39335E-3" />
+    <nuclide name="Zr96"   ao="1.19110E-3" />
+  </material>
+
+  <material id="4" temperature="293.6">
+    <density units="atom/b-cm" value="0.0744336" />
+    <nuclide name="H1"   ao="4.96224E-02" />
+    <nuclide name="O16"  ao="2.48112E-02" />
+  </material>
+
+</materials>

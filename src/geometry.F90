@@ -11,7 +11,7 @@ module geometry
   use surface_header
   use stl_vector,             only: VectorInt
   use string,                 only: to_str
-  use tally,                  only: score_surface_current
+  use tally,                  only: score_surface_current, score_surface_flux
 
   implicit none
 
@@ -555,6 +555,10 @@ contains
              // trim(to_str(surf%id)))
       end if
       return
+    end if
+
+    if (active_surf_flux_tallies % size() > 0) then
+      call score_surface_flux(p)
     end if
 
     ! ==========================================================================

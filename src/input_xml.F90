@@ -3076,7 +3076,7 @@ contains
           t % find_filter(FILTER_UNIVERSE) = j
 
         case ('surface')
-          call fatal_error("Surface filter is not yet supported!")
+          ! call fatal_error("Surface filter is not yet supported!")
           ! Allocate and declare the filter type
           allocate(SurfaceFilter::t % filters(j) % obj)
           select type (filt => t % filters(j) % obj)
@@ -3767,6 +3767,14 @@ contains
               end if
             end select
             t % find_filter(FILTER_SURFACE) = size(t % filters)
+
+          case ('flux-in')
+            t % score_bins(j) = SCORE_FLUX_IN
+            t % type = TALLY_SURFACE_FLUX
+
+          case ('flux-out')
+            t % score_bins(j) = SCORE_FLUX_OUT
+            t % type = TALLY_SURFACE_FLUX
 
           case ('events')
             t % score_bins(j) = SCORE_EVENTS
