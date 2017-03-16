@@ -26,6 +26,7 @@
     <density units="atom/b-cm" value="0.0744336" />
     <nuclide name="H1"   ao="4.96224E-02" />
     <nuclide name="O16"  ao="2.48112E-02" />
+    <sab name="c_H_in_H2O"/>
   </material>
 
 </materials>

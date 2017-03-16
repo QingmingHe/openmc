@@ -3214,7 +3214,7 @@ contains
 !===============================================================================
 ! APPLY_DERIVATIVE_TO_SCORE multiply the given score by its relative derivative
 !===============================================================================
-  subroutine score_surface_flux(p)
+  subroutine score_partial_current(p)
     type(Particle), intent(in) :: p
 
     integer :: i
@@ -3277,14 +3277,14 @@ contains
       norm = surf % normal(p % coord(1) % xyz)
       norm = norm / sqrt(dot_product(norm, norm))
       mu = dot_product(p % coord(1) % uvw, norm)
-      ! write(*, *) acos(mu) / 3.14159 * 180.0
 
       ! Calculate score
-      if (abs(mu) < 0.1) then
-        score = p % wgt / 0.05
-      else
-        score = p % wgt / abs(mu)
-      end if
+      score = p % wgt
+      ! if (abs(mu) < 0.1) then
+      !   score = p % wgt / 0.05
+      ! else
+      !   score = p % wgt / abs(mu)
+      ! end if
 
       SCORE_LOOP: do j = 1, t % n_user_score_bins
         if ((t % score_bins(j) == SCORE_FLUX_IN .and. mu < 0.0) &
@@ -3297,7 +3297,7 @@ contains
 
     end do TALLY_LOOP
 
-  end subroutine score_surface_flux
+  end subroutine score_partial_current
 
 !===============================================================================
 ! APPLY_DERIVATIVE_TO_SCORE multiply the given score by its relative derivative

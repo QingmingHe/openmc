@@ -11,7 +11,7 @@ module geometry
   use surface_header
   use stl_vector,             only: VectorInt
   use string,                 only: to_str
-  use tally,                  only: score_surface_current, score_surface_flux
+  use tally,                  only: score_surface_current, score_partial_current
 
   implicit none
 
@@ -558,7 +558,7 @@ contains
     end if
 
     if (active_surf_flux_tallies % size() > 0) then
-      call score_surface_flux(p)
+      call score_partial_current(p)
     end if
 
     ! ==========================================================================
