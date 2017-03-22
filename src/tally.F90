@@ -3225,6 +3225,7 @@ contains
     integer :: i_filter_surf   ! index of surface filter in filters
     integer :: i_filter_energy ! index of energy filter in filters
     integer :: i_filter_polar  ! index of energy filter in filters
+    integer :: i_filter_azim   ! index of azimuthal filter in filters
     real(8) :: filt_score      ! score applied by filters
     real(8) :: mu              ! cosine of particle and surface normal
     real(8) :: score           ! score of the tally
@@ -3249,7 +3250,7 @@ contains
       i_filter_energy = t % find_filter(FILTER_ENERGYIN)
       if (i_filter_energy <= 0) cycle
       i_filter_polar = t % find_filter(FILTER_POLAR)
-      if (i_filter_polar <= 0) cycle
+      i_filter_azim = t % find_filter(FILTER_AZIMUTHAL)
 
       ! Determine incoming energy bin
       call t % filters(i_filter_energy) % obj % get_next_bin(p, &
@@ -3264,10 +3265,20 @@ contains
       if (matching_bins(i_filter_surf) == NO_BIN_FOUND) cycle
 
       ! Determine polar bin
-      call t % filters(i_filter_polar) % obj % get_next_bin(p, &
-        ESTIMATOR_TRACKLENGTH, NO_BIN_FOUND, &
-        matching_bins(i_filter_polar), filt_score)
-      if (matching_bins(i_filter_polar) == NO_BIN_FOUND) cycle
+      if (i_filter_polar > 0) then
+        call t % filters(i_filter_polar) % obj % get_next_bin(p, &
+          ESTIMATOR_TRACKLENGTH, NO_BIN_FOUND, &
+          matching_bins(i_filter_polar), filt_score)
+        if (matching_bins(i_filter_polar) == NO_BIN_FOUND) cycle
+      end if
+
+      ! Determine azimuthal bin
+      if (i_filter_azim > 0) then
+        call t % filters(i_filter_azim) % obj % get_next_bin(p, &
+          ESTIMATOR_TRACKLENGTH, NO_BIN_FOUND, &
+          matching_bins(i_filter_azim), filt_score)
+        if (matching_bins(i_filter_azim) == NO_BIN_FOUND) cycle
+      end if
 
       ! Determine scoring index for this filter combination
       filter_index = sum((matching_bins(1:size(t % filters)) - 1) &
