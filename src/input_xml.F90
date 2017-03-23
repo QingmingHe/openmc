@@ -3768,13 +3768,13 @@ contains
             end select
             t % find_filter(FILTER_SURFACE) = size(t % filters)
 
-          case ('flux-in')
-            t % score_bins(j) = SCORE_FLUX_IN
-            t % type = TALLY_SURFACE_FLUX
+          case ('current-in')
+            t % score_bins(j) = SCORE_CURRENT_IN
+            t % type = TALLY_PARTIAL_CURRENT
 
-          case ('flux-out')
-            t % score_bins(j) = SCORE_FLUX_OUT
-            t % type = TALLY_SURFACE_FLUX
+          case ('current-out')
+            t % score_bins(j) = SCORE_CURRENT_OUT
+            t % type = TALLY_PARTIAL_CURRENT
 
           case ('events')
             t % score_bins(j) = SCORE_EVENTS

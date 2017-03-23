@@ -557,7 +557,7 @@ contains
       return
     end if
 
-    if (active_surf_flux_tallies % size() > 0) then
+    if (active_partial_curr_tallies % size() > 0) then
       call score_partial_current(p)
     end if
 

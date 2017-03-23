@@ -155,7 +155,7 @@ module global
   type(SetInt) :: active_tracklength_tallies
   type(SetInt) :: active_current_tallies
   type(SetInt) :: active_collision_tallies
-  type(SetInt) :: active_surf_flux_tallies
+  type(SetInt) :: active_partial_curr_tallies
   type(SetInt) :: active_tallies
 !$omp threadprivate(active_analog_tallies, active_tracklength_tallies, &
 !$omp&              active_current_tallies, active_collision_tallies, &
@@ -519,7 +519,7 @@ contains
     call active_analog_tallies % clear()
     call active_tracklength_tallies % clear()
     call active_current_tallies % clear()
-    call active_surf_flux_tallies % clear()
+    call active_partial_curr_tallies % clear()
     call active_collision_tallies % clear()
     call active_tallies % clear()
 

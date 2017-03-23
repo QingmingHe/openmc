@@ -282,7 +282,7 @@ module constants
   integer, parameter :: &
        TALLY_VOLUME          = 1, &
        TALLY_SURFACE_CURRENT = 2, &
-       TALLY_SURFACE_FLUX    = 3
+       TALLY_PARTIAL_CURRENT    = 3
 
   ! Tally estimator types
   integer, parameter :: &
@@ -324,8 +324,8 @@ module constants
        SCORE_FISS_Q_PROMPT      = -22, & ! prompt fission Q-value
        SCORE_FISS_Q_RECOV       = -23, & ! recoverable fission Q-value
        SCORE_DECAY_RATE         = -24, & ! delayed neutron precursor decay rate
-       SCORE_FLUX_IN            = -25, &
-       SCORE_FLUX_OUT           = -26
+       SCORE_CURRENT_IN            = -25, &
+       SCORE_CURRENT_OUT           = -26
 
   ! Maximum scattering order supported
   integer, parameter :: MAX_ANG_ORDER = 10

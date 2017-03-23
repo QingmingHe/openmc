@@ -3237,12 +3237,12 @@ contains
     i_surface = abs(p % surface)
     surf => surfaces(i_surface)%obj
 
-    TALLY_LOOP: do i = 1, active_surf_flux_tallies % size()
+    TALLY_LOOP: do i = 1, active_partial_curr_tallies % size()
       ! Get pointer to tally
-      i_tally = active_surf_flux_tallies % get_item(i)
+      i_tally = active_partial_curr_tallies % get_item(i)
       t => tallies(i_tally)
 
-      if (t % type /= TALLY_SURFACE_FLUX) cycle
+      if (t % type /= TALLY_PARTIAL_CURRENT) cycle
 
       ! Get index for surface and energy filters
       i_filter_surf = t % find_filter(FILTER_SURFACE)
@@ -3298,8 +3298,8 @@ contains
       ! end if
 
       SCORE_LOOP: do j = 1, t % n_user_score_bins
-        if ((t % score_bins(j) == SCORE_FLUX_IN .and. mu < 0.0) &
-          .or. (t % score_bins(j) == SCORE_FLUX_OUT .and. mu > 0.0)) then
+        if ((t % score_bins(j) == SCORE_CURRENT_IN .and. mu < 0.0) &
+          .or. (t % score_bins(j) == SCORE_CURRENT_OUT .and. mu > 0.0)) then
 !$omp atomic
           t % results(RESULT_VALUE, j, filter_index) = &
             t % results(RESULT_VALUE, j, filter_index) + score
@@ -4313,8 +4313,8 @@ contains
         end if
       elseif (user_tallies(i) % type == TALLY_SURFACE_CURRENT) then
         call active_current_tallies % add(i_user_tallies + i)
-      elseif (user_tallies(i) % type == TALLY_SURFACE_FLUX) then
-        call active_surf_flux_tallies % add(i_user_tallies + i)
+      elseif (user_tallies(i) % type == TALLY_PARTIAL_CURRENT) then
+        call active_partial_curr_tallies % add(i_user_tallies + i)
       end if
     end do
 
@@ -4340,7 +4340,7 @@ contains
     else if (active_current_tallies % size() > 0) then
       call fatal_error("Active current tallies should not exist before CMFD &
            &tallies!")
-    else if (active_surf_flux_tallies % size() > 0) then
+    else if (active_partial_curr_tallies % size() > 0) then
       call fatal_error("Active current tallies should not exist before CMFD &
         &tallies!")
     end if
