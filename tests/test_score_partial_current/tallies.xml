@@ -12,7 +12,7 @@
                 type="energy" />
         <filter bins="20 21 22" type="surface" />
         <filter bins="0.0 3.14159" type="polar" />
-        <scores>flux-in flux-out</scores>
+        <scores>current-in current-out</scores>
         <estimator>tracklength</estimator>
   </tally>
   <tally id="2">

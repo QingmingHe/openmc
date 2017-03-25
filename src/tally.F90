@@ -3291,11 +3291,6 @@ contains
 
       ! Calculate score
       score = p % wgt
-      ! if (abs(mu) < 0.1) then
-      !   score = p % wgt / 0.05
-      ! else
-      !   score = p % wgt / abs(mu)
-      ! end if
 
       SCORE_LOOP: do j = 1, t % n_user_score_bins
         if ((t % score_bins(j) == SCORE_CURRENT_IN .and. mu < 0.0) &
