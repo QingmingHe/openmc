@@ -3776,6 +3776,14 @@ contains
             t % score_bins(j) = SCORE_CURRENT_OUT
             t % type = TALLY_PARTIAL_CURRENT
 
+          case ('current-in-angle')
+            t % score_bins(j) = SCORE_ANGULAR_CURRENT_IN
+            t % type = TALLY_ANGULAR_CURRENT
+
+          case ('current-out-angle')
+            t % score_bins(j) = SCORE_ANGULAR_CURRENT_OUT
+            t % type = TALLY_ANGULAR_CURRENT
+
           case ('events')
             t % score_bins(j) = SCORE_EVENTS
 

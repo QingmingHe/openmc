@@ -282,7 +282,8 @@ module constants
   integer, parameter :: &
        TALLY_VOLUME          = 1, &
        TALLY_SURFACE_CURRENT = 2, &
-       TALLY_PARTIAL_CURRENT    = 3
+       TALLY_PARTIAL_CURRENT = 3, &
+       TALLY_ANGULAR_CURRENT = 4
 
   ! Tally estimator types
   integer, parameter :: &
@@ -298,34 +299,36 @@ module constants
        EVENT_ABSORB  =  2
 
   ! Tally score type
-  integer, parameter :: N_SCORE_TYPES = 26
+  integer, parameter :: N_SCORE_TYPES = 28
   integer, parameter :: &
-       SCORE_FLUX               = -1,  & ! flux
-       SCORE_TOTAL              = -2,  & ! total reaction rate
-       SCORE_SCATTER            = -3,  & ! scattering rate
-       SCORE_NU_SCATTER         = -4,  & ! scattering production rate
-       SCORE_SCATTER_N          = -5,  & ! arbitrary scattering moment
-       SCORE_SCATTER_PN         = -6,  & ! system for scoring 0th through nth moment
-       SCORE_NU_SCATTER_N       = -7,  & ! arbitrary nu-scattering moment
-       SCORE_NU_SCATTER_PN      = -8,  & ! system for scoring 0th through nth nu-scatter moment
-       SCORE_ABSORPTION         = -9,  & ! absorption rate
-       SCORE_FISSION            = -10, & ! fission rate
-       SCORE_NU_FISSION         = -11, & ! neutron production rate
-       SCORE_KAPPA_FISSION      = -12, & ! fission energy production rate
-       SCORE_CURRENT            = -13, & ! partial current
-       SCORE_FLUX_YN            = -14, & ! angular moment of flux
-       SCORE_TOTAL_YN           = -15, & ! angular moment of total reaction rate
-       SCORE_SCATTER_YN         = -16, & ! angular flux-weighted scattering moment (0:N)
-       SCORE_NU_SCATTER_YN      = -17, & ! angular flux-weighted nu-scattering moment (0:N)
-       SCORE_EVENTS             = -18, & ! number of events
-       SCORE_DELAYED_NU_FISSION = -19, & ! delayed neutron production rate
-       SCORE_PROMPT_NU_FISSION  = -20, & ! prompt neutron production rate
-       SCORE_INVERSE_VELOCITY   = -21, & ! flux-weighted inverse velocity
-       SCORE_FISS_Q_PROMPT      = -22, & ! prompt fission Q-value
-       SCORE_FISS_Q_RECOV       = -23, & ! recoverable fission Q-value
-       SCORE_DECAY_RATE         = -24, & ! delayed neutron precursor decay rate
-       SCORE_CURRENT_IN            = -25, &
-       SCORE_CURRENT_OUT           = -26
+       SCORE_FLUX                = -1,  & ! flux
+       SCORE_TOTAL               = -2,  & ! total reaction rate
+       SCORE_SCATTER             = -3,  & ! scattering rate
+       SCORE_NU_SCATTER          = -4,  & ! scattering production rate
+       SCORE_SCATTER_N           = -5,  & ! arbitrary scattering moment
+       SCORE_SCATTER_PN          = -6,  & ! system for scoring 0th through nth moment
+       SCORE_NU_SCATTER_N        = -7,  & ! arbitrary nu-scattering moment
+       SCORE_NU_SCATTER_PN       = -8,  & ! system for scoring 0th through nth nu-scatter moment
+       SCORE_ABSORPTION          = -9,  & ! absorption rate
+       SCORE_FISSION             = -10, & ! fission rate
+       SCORE_NU_FISSION          = -11, & ! neutron production rate
+       SCORE_KAPPA_FISSION       = -12, & ! fission energy production rate
+       SCORE_CURRENT             = -13, & ! partial current
+       SCORE_FLUX_YN             = -14, & ! angular moment of flux
+       SCORE_TOTAL_YN            = -15, & ! angular moment of total reaction rate
+       SCORE_SCATTER_YN          = -16, & ! angular flux-weighted scattering moment (0:N)
+       SCORE_NU_SCATTER_YN       = -17, & ! angular flux-weighted nu-scattering moment (0:N)
+       SCORE_EVENTS              = -18, & ! number of events
+       SCORE_DELAYED_NU_FISSION  = -19, & ! delayed neutron production rate
+       SCORE_PROMPT_NU_FISSION   = -20, & ! prompt neutron production rate
+       SCORE_INVERSE_VELOCITY    = -21, & ! flux-weighted inverse velocity
+       SCORE_FISS_Q_PROMPT       = -22, & ! prompt fission Q-value
+       SCORE_FISS_Q_RECOV        = -23, & ! recoverable fission Q-value
+       SCORE_DECAY_RATE          = -24, & ! delayed neutron precursor decay rate
+       SCORE_CURRENT_IN          = -25, &
+       SCORE_CURRENT_OUT         = -26, &
+       SCORE_ANGULAR_CURRENT_IN  = -27, &
+       SCORE_ANGULAR_CURRENT_OUT = -28
 
   ! Maximum scattering order supported
   integer, parameter :: MAX_ANG_ORDER = 10

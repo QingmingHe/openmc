@@ -11,7 +11,8 @@ module geometry
   use surface_header
   use stl_vector,             only: VectorInt
   use string,                 only: to_str
-  use tally,                  only: score_surface_current, score_partial_current
+  use tally,                  only: score_surface_current,&
+    & score_partial_current, score_angular_current
 
   implicit none
 
@@ -559,6 +560,10 @@ contains
 
     if (active_partial_curr_tallies % size() > 0) then
       call score_partial_current(p)
+    end if
+
+    if (active_angular_curr_tallies % size() > 0) then
+      call score_angular_current(p)
     end if
 
     ! ==========================================================================
