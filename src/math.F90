@@ -671,6 +671,41 @@ contains
 
   end function rotate_angle
 
+!=============================================================================
+!> Rodrigues' rotation formula. Rotate v by theta with the axis to be unit
+!! vector k.
+!! See also https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula.
+!=============================================================================
+  function rotate_vector(v, k, theta) result(v_rot)
+    real(8), intent(in) :: v(3)
+    real(8), intent(in) :: k(3)
+    real(8), intent(in) :: theta
+    real(8) :: v_rot(3)
+
+    real(8) :: sin_theta
+    real(8) :: cos_theta
+
+    sin_theta = sin(theta)
+    cos_theta = sin(theta)
+    v_rot = v * cos_theta + cross_product(k, v) * sin_theta - &
+      k * dot_product(k , v) * (1.0_8 - cos_theta)
+
+  end function rotate_vector
+
+!=============================================================================
+!> CROSS_PRODUCT computes the cross product of two vectors.
+!=============================================================================
+  function cross_product(v1, v2) result(cross)
+    real(8), intent(in) :: v1(3)
+    real(8), intent(in) :: v2(3)
+    real(8) :: cross(3)
+
+    cross(1) = v1(2) * v2(3) - v1(3) * v2(2)
+    cross(2) = v1(3) * v2(1) - v1(1) * v2(3)
+    cross(3) = v1(1) * v2(2) - v1(2) * v2(1)
+
+  end function cross_product
+
 !===============================================================================
 ! MAXWELL_SPECTRUM samples an energy from the Maxwell fission distribution based
 ! on a direct sampling scheme. The probability distribution function for a

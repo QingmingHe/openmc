@@ -8,7 +8,7 @@ module tally
   use error,            only: fatal_error
   use geometry_header
   use global
-  use math,             only: t_percentile, calc_pn, calc_rn
+  use math,             only: t_percentile, calc_pn, calc_rn, rotate_vector
   use mesh,             only: get_mesh_bin, bin_to_mesh_indices, &
                               get_mesh_indices, mesh_indices_to_bin, &
                               mesh_intersects_1d, mesh_intersects_2d, &
@@ -18,7 +18,7 @@ module tally
   use output,           only: header
   use particle_header,  only: LocalCoord, Particle
   use string,           only: to_str
-  use surface_header,   only: Surface
+  use surface_header,   only: Surface, SurfaceZCylinder
   use tally_filter
 
   implicit none
@@ -3213,6 +3213,7 @@ contains
 
 !===============================================================================
 !> SCORE_ANGULAR_CURRENT scores current in specific angle
+! https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
 !===============================================================================
   subroutine score_angular_current(p)
     type(Particle), intent(in) :: p
@@ -3230,7 +3231,13 @@ contains
     real(8) :: mu              ! cosine of particle and surface normal
     real(8) :: score           ! score of the tally
     real(8) :: norm(3)         ! normal of surface
-    real(8) :: theta           ! theta between particle and z
+    real(8) :: cut(3)          ! cut of surface
+    real(8) :: theta           ! theta between particle and normal of polar surface
+    real(8) :: norm_polar(3)   ! normal of polar surface
+    real(8) :: direc_polar(3)  ! direction of polar surface
+    real(8) :: polar           ! polar angle
+    real(8) :: proj(3)         ! projection of particle direction on polar surface
+
     type(TallyObject), pointer :: t
     class(Surface), pointer :: surf
 
@@ -3270,13 +3277,13 @@ contains
       norm = norm / sqrt(dot_product(norm, norm))
       mu = dot_product(p % coord(1) % uvw, norm)
 
-      ! Calculate angle between particle and z
-      theta = acos(p % coord(1) % uvw(3))
+      ! Determine cut of surface (rotate z by pi/2)
+      cut = rotate_vector(norm, [0.0_8, 0.0_8, 1.0_8], PI/2.0_8)
 
       SCORE_LOOP: do j = 1, t % n_user_score_bins
-        if ((t % score_bins(j) == SCORE_ANGULAR_CURRENT_IN .and. mu < 0.0) .or.&
-          & (t % score_bins(j) == SCORE_ANGULAR_CURRENT_OUT .and. mu > 0.0))&
-          & then
+        if ((t % score_bins(j) == SCORE_ANGULAR_CURRENT_IN .and. mu < 0.0_8)&
+          & .or. (t % score_bins(j) == SCORE_ANGULAR_CURRENT_OUT .and. mu >&
+          & 0.0_8)) then
           do i_polar_bin = 1, t % filters(i_filter_polar) % obj % n_bins
             ! Determine polar bin
             matching_bins(i_filter_polar) = i_polar_bin
@@ -3285,11 +3292,27 @@ contains
             filter_index = sum((matching_bins(1:size(t % filters)) - 1) &
               * t % stride) + 1
 
-            ! Determine score
+            ! Get polar angle
             select type (obj => t % filters(i_filter_polar) % obj)
             type is (PolarFilter)
-              score = p % wgt * cos(theta - obj % bins(i_polar_bin))
+              polar = theta - obj % bins(i_polar_bin)
             end select
+
+            ! Determine normal of polar surface (rotate cut by polar)
+            norm_polar = rotate_vector(norm, cut, polar)
+
+            ! Determine direction of polar surface
+            direc_polar = rotate_vector(norm_polar, cut, -PI/2.0_8)
+
+            ! Projection of particle direction on polar surface
+            proj = p % coord(1) % uvw - dot_product(p % coord(1) % uvw,&
+              & norm_polar) * norm_polar
+
+            ! Determine score
+            score = p % wgt * sqrt(dot_product(proj, proj))
+            if (dot_product(proj, direc_polar) < 0.0_8) then
+              score = -score
+            end if
 
 !$omp atomic
             t % results(RESULT_VALUE, j, filter_index) = &
@@ -3301,6 +3324,94 @@ contains
     end do TALLY_LOOP
 
   end subroutine score_angular_current
+!   subroutine score_angular_current(p)
+!     type(Particle), intent(in) :: p
+
+!     integer :: i
+!     integer :: j
+!     integer :: i_tally
+!     integer :: i_surface
+!     integer :: filter_index
+!     integer :: i_polar_bin
+!     integer :: i_filter_surf   ! index of surface filter in filters
+!     integer :: i_filter_energy ! index of energy filter in filters
+!     integer :: i_filter_polar  ! index of energy filter in filters
+!     real(8) :: filt_score      ! score applied by filters
+!     real(8) :: mu              ! cosine of particle and surface normal
+!     real(8) :: score           ! score of the tally
+!     real(8) :: norm(3)         ! normal of surface
+!     real(8) :: theta           ! theta between particle and z
+
+!     type(TallyObject), pointer :: t
+!     class(Surface), pointer :: surf
+
+!     ! Get the pointer to surface
+!     i_surface = abs(p % surface)
+!     surf => surfaces(i_surface)%obj
+
+!     TALLY_LOOP: do i = 1, active_angular_curr_tallies % size()
+!       ! Get pointer to tally
+!       i_tally = active_angular_curr_tallies % get_item(i)
+!       t => tallies(i_tally)
+
+!       if (t % type /= TALLY_ANGULAR_CURRENT) cycle
+
+!       ! Get index for surface and energy filters
+!       i_filter_surf = t % find_filter(FILTER_SURFACE)
+!       if (i_filter_surf <= 0) cycle
+!       i_filter_energy = t % find_filter(FILTER_ENERGYIN)
+!       if (i_filter_energy <= 0) cycle
+!       i_filter_polar = t % find_filter(FILTER_POLAR)
+!       if (i_filter_polar <= 0) cycle
+
+!       ! Determine incoming energy bin
+!       call t % filters(i_filter_energy) % obj % get_next_bin(p, &
+!         ESTIMATOR_TRACKLENGTH, NO_BIN_FOUND, &
+!         matching_bins(i_filter_energy), filt_score)
+!       if (matching_bins(i_filter_energy) == NO_BIN_FOUND) cycle
+
+!       ! Determine surface bin
+!       call t % filters(i_filter_surf) % obj % get_next_bin(p, &
+!         ESTIMATOR_TRACKLENGTH, NO_BIN_FOUND, &
+!         matching_bins(i_filter_surf), filt_score)
+!       if (matching_bins(i_filter_surf) == NO_BIN_FOUND) cycle
+
+!       ! Calculate cosine between particle and surface norm
+!       norm = surf % normal(p % coord(1) % xyz)
+!       norm = norm / sqrt(dot_product(norm, norm))
+!       mu = dot_product(p % coord(1) % uvw, norm)
+
+!       ! Calculate angle between particle and z
+!       theta = acos(p % coord(1) % uvw(3))
+
+!       SCORE_LOOP: do j = 1, t % n_user_score_bins
+!         if ((t % score_bins(j) == SCORE_ANGULAR_CURRENT_IN .and. mu < 0.0) .or.&
+!           & (t % score_bins(j) == SCORE_ANGULAR_CURRENT_OUT .and. mu > 0.0))&
+!           & then
+!           do i_polar_bin = 1, t % filters(i_filter_polar) % obj % n_bins
+!             ! Determine polar bin
+!             matching_bins(i_filter_polar) = i_polar_bin
+
+!             ! Determine scoring index for this filter combination
+!             filter_index = sum((matching_bins(1:size(t % filters)) - 1) &
+!               * t % stride) + 1
+
+!             ! Determine score
+!             select type (obj => t % filters(i_filter_polar) % obj)
+!             type is (PolarFilter)
+!               score = p % wgt * cos(theta - obj % bins(i_polar_bin))
+!             end select
+
+! !$omp atomic
+!             t % results(RESULT_VALUE, j, filter_index) = &
+!               t % results(RESULT_VALUE, j, filter_index) + score
+!           end do
+!         end if
+!       end do SCORE_LOOP
+
+!     end do TALLY_LOOP
+
+!   end subroutine score_angular_current
 
 !===============================================================================
 ! SCORE_PARTIAL_CURRENT scores partial current in polar angle ranges
