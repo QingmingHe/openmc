@@ -3285,7 +3285,7 @@ contains
           & 0.0_8)) then
           do ib = 1, t % filters(i_filter_polar) % obj % n_bins
             ! Get Legendre order
-            il = ib
+            il = ib - 1
             ! select type (obj => t % filters(i_filter_polar) % obj)
             ! type is (PolarFilter)
             !   il = int(obj % bins(ib))
