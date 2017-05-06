@@ -156,12 +156,12 @@ module global
   type(SetInt) :: active_current_tallies
   type(SetInt) :: active_collision_tallies
   type(SetInt) :: active_partial_curr_tallies
-  type(SetInt) :: active_angular_curr_tallies
+  type(SetInt) :: active_curr_legendre_tallies
   type(SetInt) :: active_tallies
 !$omp threadprivate(active_analog_tallies, active_tracklength_tallies, &
 !$omp&              active_current_tallies, active_collision_tallies, &
 !$omp&              active_tallies, active_partial_curr_tallies, &
-!$omp&              active_angular_curr_tallies)
+!$omp&              active_curr_legendre_tallies)
 
   ! Global tallies
   !   1) collision estimate of k-eff
@@ -522,7 +522,7 @@ contains
     call active_tracklength_tallies % clear()
     call active_current_tallies % clear()
     call active_partial_curr_tallies % clear()
-    call active_angular_curr_tallies % clear()
+    call active_curr_legendre_tallies % clear()
     call active_collision_tallies % clear()
     call active_tallies % clear()
 

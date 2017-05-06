@@ -12,7 +12,7 @@ module geometry
   use stl_vector,             only: VectorInt
   use string,                 only: to_str
   use tally,                  only: score_surface_current,&
-    & score_partial_current, score_angular_current
+    & score_partial_current, score_current_legendre
 
   implicit none
 
@@ -562,8 +562,8 @@ contains
       call score_partial_current(p)
     end if
 
-    if (active_angular_curr_tallies % size() > 0) then
-      call score_angular_current(p)
+    if (active_curr_legendre_tallies % size() > 0) then
+      call score_current_legendre(p)
     end if
 
     ! ==========================================================================

@@ -283,7 +283,7 @@ module constants
        TALLY_VOLUME          = 1, &
        TALLY_SURFACE_CURRENT = 2, &
        TALLY_PARTIAL_CURRENT = 3, &
-       TALLY_ANGULAR_CURRENT = 4
+       TALLY_CURRENT_LEGENDRE = 4
 
   ! Tally estimator types
   integer, parameter :: &
@@ -327,8 +327,8 @@ module constants
        SCORE_DECAY_RATE          = -24, & ! delayed neutron precursor decay rate
        SCORE_CURRENT_IN          = -25, &
        SCORE_CURRENT_OUT         = -26, &
-       SCORE_ANGULAR_CURRENT_IN  = -27, &
-       SCORE_ANGULAR_CURRENT_OUT = -28
+       SCORE_CURRENT_IN_LEGENDRE  = -27, &
+       SCORE_CURRENT_OUT_LEGENDRE = -28
 
   ! Maximum scattering order supported
   integer, parameter :: MAX_ANG_ORDER = 10
