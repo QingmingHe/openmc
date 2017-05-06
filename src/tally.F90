@@ -3292,7 +3292,7 @@ contains
             ! end select
 
             ! Calculate score
-            score = p % wgt * calc_pn(il, x)
+            score = p % wgt * calc_pn(il, x) * (2.0_8 * il + 1.0_8) / 2.0_8
 
             ! Determine scoring index for this filter combination
             matching_bins(i_filter_polar) = ib
