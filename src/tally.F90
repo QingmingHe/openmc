@@ -3283,9 +3283,9 @@ contains
         if ((t % score_bins(j) == SCORE_CURRENT_IN_LEGENDRE .and. mu < 0.0_8)&
           & .or. (t % score_bins(j) == SCORE_CURRENT_OUT_LEGENDRE .and. mu >&
           & 0.0_8)) then
-          do ib = 1, t % filters(i_filter_polar) % obj % n_bins
+          do ib = 0, t % filters(i_filter_polar) % obj % n_bins
             ! Get Legendre order
-            il = ib - 1
+            il = ib
             ! select type (obj => t % filters(i_filter_polar) % obj)
             ! type is (PolarFilter)
             !   il = int(obj % bins(ib))
