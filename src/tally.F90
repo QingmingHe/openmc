@@ -3286,13 +3286,9 @@ contains
           do ib = 1, t % filters(i_filter_polar) % obj % n_bins
             ! Get Legendre order
             il = ib - 1
-            ! select type (obj => t % filters(i_filter_polar) % obj)
-            ! type is (PolarFilter)
-            !   il = int(obj % bins(ib))
-            ! end select
 
             ! Calculate score
-            score = p % wgt * calc_pn(il, x) * (2.0_8 * il + 1.0_8) / 2.0_8
+            score = p % wgt * calc_pn(il, x)
 
             ! Determine scoring index for this filter combination
             matching_bins(i_filter_polar) = ib
