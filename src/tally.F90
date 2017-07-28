@@ -3278,6 +3278,7 @@ contains
 
       ! Convert to [-1, 1]
       x = 2.0_8 * theta / PI - 1.0_8
+      ! x = p % coord(1) % uvw(3)
 
       SCORE_LOOP: do j = 1, t % n_user_score_bins
         if ((t % score_bins(j) == SCORE_CURRENT_IN_LEGENDRE .and. mu < 0.0_8)&
